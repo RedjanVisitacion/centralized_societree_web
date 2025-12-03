@@ -1,0 +1,12 @@
+.theme-elecom .nav-link:hover,
+.theme-elecom .nav-link.active {
+  border-left-color: var(--brand-dark);
+}
+
+.theme-elecom .user-avatar {
+  background: var(--brand-dark);
+}
+
+.theme-elecom .top-navbar {
+  background: #ffffff;
+}
