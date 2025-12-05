@@ -215,19 +215,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <button class="menu-toggle" id="menuToggle">
                 <i class="bi bi-list"></i>
             </button>
-            <div class="search-box position-relative" style="min-width:320px; flex:1 1 auto; max-width: 760px;">
-                <div class="input-group input-group-lg">
-                    <input id="candidateSearch" type="text" class="form-control" placeholder="Search candidate by name, ID, position, or organization..." autocomplete="off">
-                    <button class="btn btn-outline-secondary" type="button" id="candidateSearchBtn">
-                        <i class="bi bi-search"></i>
-                    </button>
-                </div>
-                <div id="searchResults" class="list-group position-absolute w-100" style="z-index:1050; max-height: 320px; overflow:auto; display:none;"></div>
-            </div>
             <div class="user-info">
-                <div class="notifications">
-                    <i class="bi bi-bell fs-5"></i>
-                </div>
                 <div class="user-avatar">
                     <i class="<?php echo $__icon_class; ?>"></i>
                 </div>

@@ -113,15 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="main-content">
         <nav class="top-navbar d-flex align-items-center gap-3">
             <button class="menu-toggle" id="menuToggle"><i class="bi bi-list"></i></button>
-            <div class="search-box position-relative" style="min-width:320px; flex:1 1 auto; max-width: 760px;">
-                <div class="input-group input-group-lg">
-                    <input id="candidateSearch" type="text" class="form-control" placeholder="Search candidate by name, ID, position, or organization..." autocomplete="off">
-                    <button class="btn btn-outline-secondary" type="button" id="candidateSearchBtn"><i class="bi bi-search"></i></button>
-                </div>
-                <div id="searchResults" class="list-group position-absolute w-100" style="z-index:1050; max-height: 320px; overflow:auto; display:none;"></div>
-            </div>
             <div class="user-info">
-                <div class="notifications"><i class="bi bi-bell fs-5"></i></div>
                 <div class="user-avatar"><i class="<?= htmlspecialchars($icon_class) ?>"></i></div>
                 <div class="user-details">
                     <div class="user-name"><?= htmlspecialchars($display_name) ?></div>
@@ -245,61 +237,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         sidebarOverlay.addEventListener('click', function(){ sidebar.classList.remove('active'); sidebarOverlay.classList.remove('active'); });
         window.addEventListener('resize', function(){ if (window.innerWidth > 992) { sidebar.classList.remove('active'); sidebarOverlay.classList.remove('active'); } });
 
-        // Candidate Search Logic
-        const csInput = document.getElementById('candidateSearch');
-        const csBtn = document.getElementById('candidateSearchBtn');
-        const csResults = document.getElementById('searchResults');
-        let csDebounce = null;
-
-        function csHide() { if (!csResults) return; csResults.style.display = 'none'; csResults.innerHTML = ''; }
-        function csShow(items) {
-            if (!csResults) return;
-            if (!items || items.length === 0) { csHide(); return; }
-            const placeholder = 'https://via.placeholder.com/40x40?text=%20';
-            csResults.innerHTML = items.map(item => {
-                const name = [item.first_name, item.middle_name, item.last_name].filter(Boolean).join(' ');
-                const photo = item.photo_url && item.photo_url.startsWith('http') ? item.photo_url : placeholder;
-                return `\n<a href="#" class="list-group-item list-group-item-action" data-id="${item.id}">\n  <div class="d-flex align-items-center gap-2">\n    <img src="${photo}" alt="" class="rounded-circle border" style="width:40px;height:40px;object-fit:cover;">\n    <div class="flex-grow-1">\n      <div class="d-flex w-100 justify-content-between">\n        <strong>${name}</strong>\n        <small>${item.student_id || ''}</small>\n      </div>\n      <div class="small text-muted">${item.position || ''}${item.organization ? ' • ' + item.organization : ''}</div>\n    </div>\n  </div>\n</a>`;
-            }).join('');
-            csResults.style.display = 'block';
-        }
-        async function csSearch() {
-            const q = csInput ? csInput.value.trim() : '';
-            if (!q || q.length < 2) { csHide(); return; }
-            try {
-                const res = await fetch(`elecom_candidates_api.php?action=search&q=${encodeURIComponent(q)}`);
-                const data = await res.json();
-                csShow(data);
-            } catch (_) { csHide(); }
-        }
-        csInput && csInput.addEventListener('input', () => { clearTimeout(csDebounce); csDebounce = setTimeout(csSearch, 250); });
-        csBtn && csBtn.addEventListener('click', (e) => { e.preventDefault(); csSearch(); });
-        document.addEventListener('click', (e) => { if (csResults && !csResults.contains(e.target) && e.target !== csInput) { csHide(); } });
-        csResults && csResults.addEventListener('click', async (e) => {
-            const link = e.target.closest('a[data-id]');
-            if (!link) return;
-            e.preventDefault();
-            const id = link.getAttribute('data-id');
-            csHide();
-            try {
-                const res = await fetch(`elecom_candidates_api.php?action=detail&id=${encodeURIComponent(id)}`);
-                const d = await res.json();
-                if (d && !d.error) {
-                    const name = [d.first_name, d.middle_name, d.last_name].filter(Boolean).join(' ');
-                    document.getElementById('cd_name').value = name;
-                    document.getElementById('cd_student_id').value = d.student_id || '';
-                    document.getElementById('cd_position').value = d.position || '';
-                    document.getElementById('cd_org').value = d.organization || '';
-                    document.getElementById('cd_program').value = d.program || '';
-                    document.getElementById('cd_year').value = d.year_section || '';
-                    document.getElementById('cd_platform').textContent = d.platform || '';
-                    const img = document.getElementById('cd_photo');
-                    if (d.photo_url && d.photo_url.startsWith('http')) { img.src = d.photo_url; img.style.display = 'block'; } else { img.style.display = 'none'; }
-                    const modal = new bootstrap.Modal(document.getElementById('candidateModal'));
-                    modal.show();
-                }
-            } catch (_) {}
-        });
+        // Removed search features on this page
     });
     </script>
 </body>
