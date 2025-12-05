@@ -67,6 +67,58 @@ try {
         $total_cast_votes = 0;
     }
 }
+
+// Compute total not voted (after totals above)
+$total_not_voted = max(0, (int)$total_voters - (int)$total_cast_votes);
+
+// Fetch recent voting history (latest 10)
+$recentVotes = [];
+try {
+    // Primary: votes.student_id -> student.id_number
+    $sql = "SELECT v.student_id AS sid, v.created_at AS voted_at, s.first_name, s.middle_name, s.last_name
+            FROM votes v
+            LEFT JOIN student s ON s.id_number = v.student_id
+            ORDER BY v.created_at DESC
+            LIMIT 10";
+    $stmtRV = $pdo->query($sql);
+    $recentVotes = $stmtRV->fetchAll(PDO::FETCH_ASSOC);
+} catch (Throwable $e) {
+    try {
+        // Fallback: votes.voter_id -> student.id_number
+        $sql1b = "SELECT v.voter_id AS sid, v.created_at AS voted_at, s.first_name, s.middle_name, s.last_name
+                  FROM votes v
+                  LEFT JOIN student s ON s.id_number = v.voter_id
+                  ORDER BY v.created_at DESC
+                  LIMIT 10";
+        $stmtRV1b = $pdo->query($sql1b);
+        $recentVotes = $stmtRV1b->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Throwable $e1b) {
+        try {
+            // Fallback: votes.user_id -> users.user_id (if present)
+            $sql2 = "SELECT v.user_id AS sid, v.created_at AS voted_at, u.first_name, u.middle_name, u.last_name
+                     FROM votes v
+                     LEFT JOIN users u ON u.user_id = v.user_id
+                     ORDER BY v.created_at DESC
+                     LIMIT 10";
+            $stmtRV2 = $pdo->query($sql2);
+            $recentVotes = $stmtRV2->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Throwable $e2) {
+            try {
+                // Fallback: aggregate from vote_items by voter_id -> student.id_number
+                $sql3 = "SELECT vi.voter_id AS sid, MAX(vi.created_at) AS voted_at, s.first_name, s.middle_name, s.last_name
+                         FROM vote_items vi
+                         LEFT JOIN student s ON s.id_number = vi.voter_id
+                         GROUP BY vi.voter_id, s.first_name, s.middle_name, s.last_name
+                         ORDER BY voted_at DESC
+                         LIMIT 10";
+                $stmtRV3 = $pdo->query($sql3);
+                $recentVotes = $stmtRV3->fetchAll(PDO::FETCH_ASSOC);
+            } catch (Throwable $e3) {
+                $recentVotes = [];
+            }
+        }
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -319,19 +371,52 @@ try {
                         </div>
                     </div>
                 </div>
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body d-flex align-items-center">
+                            <div class="me-3 text-secondary">
+                                <i class="bi bi-hourglass-split" style="font-size: 2rem;"></i>
+                            </div>
+                            <div>
+                                <div class="small text-muted">Total Not Voted</div>
+                                <div class="h3 mb-0"><?php echo number_format($total_not_voted); ?></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <!-- Announcements and Election Window -->
+            <!-- Voting History and Election Date -->
             <div class="row g-3">
                 <div class="col-12 col-lg-6">
                     <div class="card shadow-sm border-0 h-100">
                         <div class="card-body">
-                            <h5 class="mb-3">Announcements</h5>
-                            <div class="activity-list">
-                                <div class="activity-item">
-                                    
+                            <h5 class="mb-3">Recent Voting History</h5>
+                            <?php if (!empty($recentVotes)): ?>
+                                <div style="max-height: 340px; overflow: auto;" id="recentVotesScroll">
+                                <ul class="list-group list-group-flush">
+                                    <?php foreach ($recentVotes as $rv): ?>
+                                        <?php
+                                            $nm = trim(($rv['first_name'] ?? '').' '.($rv['middle_name'] ?? '').' '.($rv['last_name'] ?? ''));
+                                            $nm = $nm !== '' ? $nm : ($rv['sid'] ?? '');
+                                            $dt = isset($rv['voted_at']) ? date('M d, Y h:i A', strtotime($rv['voted_at'])) : '';
+                                        ?>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <i class="bi bi-person-check text-success"></i>
+                                                <div>
+                                                    <div class="fw-semibold"><?php echo htmlspecialchars($nm); ?></div>
+                                                    <div class="small text-muted"><?php echo htmlspecialchars($rv['sid'] ?? ''); ?></div>
+                                                </div>
+                                            </div>
+                                            <div class="small text-muted"><?php echo htmlspecialchars($dt); ?></div>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ul>
                                 </div>
-                            </div>
+                            <?php else: ?>
+                                <div class="text-muted">No votes have been cast yet.</div>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
