@@ -28,6 +28,7 @@ $icon_class = ($role === 'admin') ? 'bi bi-person-gear' : 'bi bi-person-circle';
                     <img src="../../../assets/logo/elecom_2.png" alt="ELECOM Logo">
                     <h4>Electoral Commission</h4>
                 </div>
+
                 <button class="btn-close-sidebar" id="closeSidebar"><i class="bi bi-x-lg"></i></button>
             </div>
         </div>
@@ -154,6 +155,42 @@ $icon_class = ($role === 'admin') ? 'bi bi-person-gear' : 'bi bi-person-circle';
       </div>
     </div>
 
+    <!-- View Details Modal (body root) -->
+    <div class="modal fade" id="viewModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Candidate Details</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="d-flex gap-3 align-items-start">
+                <img id="vd_photo" src="" alt="" class="rounded border" style="width:140px;height:140px;object-fit:cover;display:none;">
+                <div class="flex-grow-1">
+                    <div class="h5 mb-1" id="vd_name"></div>
+                    <div class="text-muted small">Student ID: <span id="vd_student_id"></span></div>
+                    <div class="mt-2 row g-2">
+                        <div class="col-md-6"><strong>Organization:</strong> <span id="vd_org"></span></div>
+                        <div class="col-md-6"><strong>Position:</strong> <span id="vd_position"></span></div>
+                        <div class="col-md-6"><strong>Program:</strong> <span id="vd_program"></span></div>
+                        <div class="col-md-6"><strong>Year/Section:</strong> <span id="vd_year"></span></div>
+                        <div class="col-md-12 d-flex align-items-center gap-2"><strong>Party:</strong> <img id="vd_party_logo" src="" alt="" class="rounded-circle border" style="width:24px;height:24px;object-fit:cover;display:none;"> <span id="vd_party"></span></div>
+                    </div>
+                </div>
+            </div>
+            <hr>
+            <div>
+                <strong>Platform</strong>
+                <div id="vd_platform" class="mt-1" style="white-space:pre-wrap"></div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function(){
@@ -178,7 +215,7 @@ $icon_class = ($role === 'admin') ? 'bi bi-person-gear' : 'bi bi-person-circle';
                 ? `<img src="${item.photo_url}" class="rounded-circle border" style="width:48px;height:48px;object-fit:cover;" alt="">`
                 : `<div class="rounded-circle border d-flex align-items-center justify-content-center bg-light" style="width:48px;height:48px;"><i class="bi bi-person fs-4 text-secondary"></i></div>`;
             return `
-            <div class="p-3 border rounded d-flex align-items-center gap-3">
+            <div class="p-3 border rounded d-flex align-items-center gap-3 candidate-card" data-id="${item.id}" style="cursor:pointer;">
                 ${avatarHtml}
                 <div class="flex-grow-1">
                     <div class="fw-semibold">${name || item.student_id}</div>
@@ -282,8 +319,48 @@ $icon_class = ($role === 'admin') ? 'bi bi-person-gear' : 'bi bi-person-circle';
         searchBtn.addEventListener('click', loadList);
         loadList();
 
+        // Card click -> view details (ignore clicks on edit/delete buttons)
+        const viewModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('viewModal'));
+        document.getElementById('viewModal').addEventListener('hidden.bs.modal', ()=>{
+            document.body.classList.remove('modal-open');
+            document.querySelectorAll('.modal-backdrop').forEach(b=>b.remove());
+        });
+        document.addEventListener('click', async (e)=>{
+            const btn = e.target.closest('button[data-action]');
+            if (btn) return; // handled below in edit/delete flow
+            const card = e.target.closest('.candidate-card');
+            if(!card) return;
+            const id = card.getAttribute('data-id');
+            try {
+                const res = await fetch(`elecom_candidates_api.php?action=detail&id=${encodeURIComponent(id)}`);
+                const d = await res.json();
+                if (d && !d.error) {
+                    const name = [d.first_name, d.middle_name, d.last_name].filter(Boolean).join(' ');
+                    document.getElementById('vd_name').textContent = name || '';
+                    document.getElementById('vd_student_id').textContent = d.student_id || '';
+                    document.getElementById('vd_org').textContent = d.organization || '';
+                    document.getElementById('vd_position').textContent = d.position || '';
+                    document.getElementById('vd_program').textContent = d.program || '';
+                    document.getElementById('vd_year').textContent = d.year_section || '';
+                    document.getElementById('vd_party').textContent = d.party_name || 'Independent';
+                    const img = document.getElementById('vd_photo');
+                    if (d.photo_url && d.photo_url.startsWith('http')) { img.src = d.photo_url; img.style.display = 'block'; }
+                    else { img.style.display = 'none'; }
+                    const logo = document.getElementById('vd_party_logo');
+                    if (d.party_logo_url && d.party_logo_url.startsWith('http')) { logo.src = d.party_logo_url; logo.style.display = 'inline-block'; }
+                    else { logo.style.display = 'none'; }
+                    document.getElementById('vd_platform').textContent = d.platform || '';
+                    viewModal.show();
+                }
+            } catch(_) {}
+        });
+
         // Edit flow
-        const editModal = new bootstrap.Modal(document.getElementById('editModal'));
+        const editModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('editModal'));
+        document.getElementById('editModal').addEventListener('hidden.bs.modal', ()=>{
+            document.body.classList.remove('modal-open');
+            document.querySelectorAll('.modal-backdrop').forEach(b=>b.remove());
+        });
         const edForm = document.getElementById('editForm');
         document.addEventListener('click', async (e)=>{
             const btn = e.target.closest('button[data-action]');

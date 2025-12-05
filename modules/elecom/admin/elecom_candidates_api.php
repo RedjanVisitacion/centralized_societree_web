@@ -96,7 +96,7 @@ try {
                 http_response_code(400); echo json_encode(['error'=>'Representative only allowed for USG']); exit;
             }
         }
-        $sql = 'UPDATE candidates_registration SET '.implode(',',$sets).', updated_at = NOW() WHERE id = :id';
+        $sql = 'UPDATE candidates_registration SET '.implode(',',$sets).' WHERE id = :id';
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);
         echo json_encode(['ok'=>true]);
