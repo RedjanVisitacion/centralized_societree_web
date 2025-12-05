@@ -1,3 +1,14 @@
+<?php
+require_once '../../../db_connection.php';
+if (session_status() === PHP_SESSION_NONE) { session_start(); }
+if (!isset($_SESSION['user_id'])) { header('Location: ../../../index.php'); exit(); }
+$role = isset($_SESSION['role']) ? strtolower((string)$_SESSION['role']) : '';
+$full_name = trim($_SESSION['full_name'] ?? '');
+$student_id = $_SESSION['student_id'] ?? '';
+$display_name = $full_name !== '' ? $full_name : ($student_id !== '' ? $student_id : ($role !== '' ? ucfirst($role) : 'Student'));
+$display_role = 'Student';
+$icon_class = 'bi bi-person-circle';
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -12,6 +23,11 @@
     <link rel="stylesheet" href="../css/elecom.css">
 
 
+    <!-- Popup Modal for APK Download -->
+    <style>
+      .modal-header .app-logo { width: 36px; height: 36px; }
+    </style>
+    
 </head>
 <body class="theme-elecom">
 
@@ -88,11 +104,11 @@
                     <i class="bi bi-bell fs-5"></i>
                 </div>
                 <div class="user-avatar">
-                    <i class="bi bi-person-circle"></i>
+                    <i class="<?php echo $icon_class; ?>"></i>
                 </div>
                 <div class="user-details">
-                    <div class="user-name">Tim</div>
-                    <div class="user-role">Student</div>
+                    <div class="user-name"><?php echo htmlspecialchars($display_name); ?></div>
+                    <div class="user-role"><?php echo htmlspecialchars($display_role); ?></div>
                 </div>
             </div>
         </nav>
@@ -111,6 +127,35 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- APK Download Modal -->
+    <div class="modal fade" id="apkModal" tabindex="-1" aria-labelledby="apkModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <div class="d-flex align-items-center gap-2">
+              <img src="../../../assets/logo/elecom_2.png" alt="App" class="app-logo rounded-circle">
+              <h5 class="modal-title" id="apkModalLabel">Welcome to ELECOM</h5>
+            </div>
+          </div>
+          <div class="modal-body">
+            <div class="d-flex align-items-start gap-3">
+              <i class="bi bi-info-circle fs-3 text-primary"></i>
+              <div>
+                <div class="fw-semibold mb-1">Student web portal is under construction</div>
+                <div class="mb-2">Please use the SocieTree mobile app for voting and student features in the meantime.</div>
+                <a href="https://www.mediafire.com/file/pn8lujiic1i8jiv/SocieTree_v3.apk/file" class="btn btn-primary" target="_blank" rel="noopener noreferrer">
+                  <i class="bi bi-download me-1"></i> Download SocieTree Android APK
+                </a>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <a href="../../../index.php" class="btn btn-danger">Logout</a>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Bootstrap JS and dependencies -->
@@ -161,6 +206,15 @@
                     sidebarOverlay.classList.remove('active');
                 }
             });
+
+            // 5. Show APK modal on load
+            try {
+                const modalEl = document.getElementById('apkModal');
+                if (modalEl) {
+                    const apkModal = new bootstrap.Modal(modalEl);
+                    apkModal.show();
+                }
+            } catch (e) { /* ignore */ }
         });
     </script>
 </body>
