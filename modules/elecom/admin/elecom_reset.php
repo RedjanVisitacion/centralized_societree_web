@@ -20,7 +20,7 @@ function ensure_admin_page() {
     }
 }
 
-// Handle reset
+// Handle reset votes
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset']) && $_POST['reset'] === '1') {
     ensure_admin_page();
     $confirm = trim($_POST['confirm'] ?? '');
@@ -41,14 +41,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset']) && $_POST['r
     }
 }
 
+// Handle reset notifications
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset_notifications']) && $_POST['reset_notifications'] === '1') {
+    ensure_admin_page();
+    $confirmN = trim($_POST['confirm_notifications'] ?? '');
+    if (strtoupper($confirmN) !== 'CLEAR') {
+        $error_msg = 'Type CLEAR to confirm notifications reset.';
+    } else {
+        try {
+            $pdo->exec('DELETE FROM user_notifications');
+            $success_msg = 'All notifications have been cleared.';
+        } catch (Throwable $e) {
+            $error_msg = 'Failed to clear notifications.';
+        }
+    }
+}
+
 // Fetch current counts
-$votes_count = 0; $vote_items_count = 0;
+$votes_count = 0; $vote_items_count = 0; $notif_count = 0;
 try {
     $votes_count = (int)$pdo->query('SELECT COUNT(*) FROM votes')->fetchColumn();
 } catch (Throwable $e) { $votes_count = 0; }
 try {
     $vote_items_count = (int)$pdo->query('SELECT COUNT(*) FROM vote_items')->fetchColumn();
 } catch (Throwable $e) { $vote_items_count = 0; }
+try {
+    $notif_count = (int)$pdo->query('SELECT COUNT(*) FROM user_notifications')->fetchColumn();
+} catch (Throwable $e) { $notif_count = 0; }
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -115,7 +134,7 @@ try {
                     <?php endif; ?>
 
                     <div class="row g-3 mb-3">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="p-3 border rounded bg-light">
                                 <div class="d-flex justify-content-between">
                                     <span class="fw-semibold">Total Votes</span>
@@ -124,7 +143,7 @@ try {
                                 <div class="small text-muted">Rows in votes table</div>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="p-3 border rounded bg-light">
                                 <div class="d-flex justify-content-between">
                                     <span class="fw-semibold">Total Vote Items</span>
@@ -133,10 +152,19 @@ try {
                                 <div class="small text-muted">Rows in vote_items table</div>
                             </div>
                         </div>
+                        <div class="col-md-4">
+                            <div class="p-3 border rounded bg-light">
+                                <div class="d-flex justify-content-between">
+                                    <span class="fw-semibold">Total Notifications</span>
+                                    <span class="badge text-bg-secondary"><?= (int)$notif_count ?></span>
+                                </div>
+                                <div class="small text-muted">Rows in user_notifications table</div>
+                            </div>
+                        </div>
                     </div>
 
                     <?php if ($role === 'admin'): ?>
-                    <form method="post" onsubmit="return confirm('This will permanently delete all votes. Continue?');">
+                    <form method="post" class="mb-4" onsubmit="return confirm('This will permanently delete all votes. Continue?');">
                         <input type="hidden" name="reset" value="1">
                         <div class="mb-3">
                             <label class="form-label">Type RESET to confirm</label>
@@ -144,6 +172,16 @@ try {
                         </div>
                         <button type="submit" class="btn btn-danger">
                             <i class="bi bi-exclamation-triangle"></i> Reset All Votes
+                        </button>
+                    </form>
+                    <form method="post" onsubmit="return confirm('This will permanently delete all notifications in user_notifications. Continue?');">
+                        <input type="hidden" name="reset_notifications" value="1">
+                        <div class="mb-3">
+                            <label class="form-label">Type CLEAR to confirm</label>
+                            <input type="text" name="confirm_notifications" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-outline-danger">
+                            <i class="bi bi-bell-slash"></i> Clear All Notifications
                         </button>
                     </form>
                     <?php else: ?>
