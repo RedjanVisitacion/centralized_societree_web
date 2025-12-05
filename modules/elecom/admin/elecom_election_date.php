@@ -101,11 +101,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="sidebar-menu">
             <ul class="nav flex-column">
                 <li class="nav-item"><a class="nav-link" href="elecom_dashboard.php"><i class="bi bi-house-door"></i><span>Home</span></a></li>
-                <li class="nav-item"><a class="nav-link" href="elecom_register_candidate.php"><i class="bi bi-box-arrow-in-down"></i><span>Register Candidate</span></a></li>
-                <li class="nav-item"><a class="nav-link active" href="elecom_election_date.php"><i class="bi bi-file-bar-graph"></i><span>Set Election Dates</span></a></li>
-                <li class="nav-item"><a class="nav-link" href="elecom_candidates.php"><i class="bi bi-check2"></i><span>Candidates</span></a></li>
-                <li class="nav-item"><a class="nav-link" href="elecom_reset.php"><i class="bi bi-arrow-counterclockwise"></i><span>Reset Votes</span></a></li>
-                <li class="nav-item"><a class="nav-link" href="../../../dashboard.php"><i class="bi bi-box-arrow-right"></i><span>Logout</span></a></li>
+                <li class="nav-item"><a class="nav-link" href="elecom_register_candidate.php"><i class="bi bi-person-plus"></i><span>Register Candidate</span></a></li>
+                <li class="nav-item"><a class="nav-link active" href="elecom_election_date.php"><i class="bi bi-calendar-event"></i><span>Set Election Dates</span></a></li>
+                <li class="nav-item"><a class="nav-link" href="elecom_candidates.php"><i class="bi bi-people"></i><span>Candidates</span></a></li>
+                <li class="nav-item"><a class="nav-link" href="elecom_results.php"><i class="bi bi-graph-up"></i><span>Results</span></a></li>
+                <li class="nav-item"><a class="nav-link" href="elecom_reset.php"><i class="bi bi-arrow-counterclockwise"></i><span>Reset Votes</span></a></li><a class="nav-link" href="../../../dashboard.php">
+                        <i class="bi bi-speedometer2"></i>
+                        <span>SocieTree Dashboard</span>
+                    </a>
             </ul>
         </div>
     </div>

@@ -160,20 +160,26 @@ try {
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="elecom_register_candidate.php">
-                        <i class="bi bi-box-arrow-in-down"></i>
+                        <i class="bi bi-person-plus"></i>
                         <span>Register Candidate</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="elecom_election_date.php">
-                        <i class="bi bi-file-bar-graph"></i>
+                        <i class="bi bi-calendar-event"></i>
                         <span>Set Election Dates</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="elecom_candidates.php">
-                        <i class="bi bi-check2"></i>
+                        <i class="bi bi-people"></i>
                         <span>Candidates</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="elecom_results.php">
+                        <i class="bi bi-graph-up"></i>
+                        <span>Results</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -184,8 +190,8 @@ try {
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="../../../dashboard.php">
-                        <i class="bi bi-box-arrow-right"></i>
-                        <span>Logout</span>
+                        <i class="bi bi-speedometer2"></i>
+                        <span>SocieTree Dashboard</span>
                     </a>
                 </li>
             </ul>
@@ -271,9 +277,9 @@ try {
                 <div id="searchResults" class="list-group position-absolute w-100" style="z-index:1050; max-height: 320px; overflow:auto; display:none;"></div>
             </div>
             <div class="user-info">
-                <div class="notifications">
+                <!-- <div class="notifications">
                     <i class="bi bi-bell fs-5"></i>
-                </div>
+                </div> -->
                 <div class="user-avatar">
                     <i class="<?php echo $icon_class; ?>"></i>
                 </div>
