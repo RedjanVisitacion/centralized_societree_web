@@ -65,8 +65,17 @@ $icon_class = ($role === 'admin') ? 'bi bi-person-gear' : 'bi bi-person-circle';
         <div class="content-area">
             <div class="card border-0 shadow-sm">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="mb-0">Candidates</h5>
+                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                        <div class="d-flex align-items-center gap-3">
+                            <h5 class="mb-0">Candidates</h5>
+                            <div class="form-check m-0">
+                                <input class="form-check-input" type="checkbox" id="selectAll">
+                                <label class="form-check-label" for="selectAll">Select all</label>
+                            </div>
+                            <button class="btn btn-outline-danger btn-sm" id="bulkDeleteBtn" disabled>
+                                <i class="bi bi-person-dash"></i> Unregister Selected
+                            </button>
+                        </div>
                         <div class="text-muted small" id="listCount"></div>
                     </div>
                     <div id="candidatesList" class="vstack gap-2"></div>
@@ -216,6 +225,9 @@ $icon_class = ($role === 'admin') ? 'bi bi-person-gear' : 'bi bi-person-circle';
                 : `<div class="rounded-circle border d-flex align-items-center justify-content-center bg-light" style="width:48px;height:48px;"><i class="bi bi-person fs-4 text-secondary"></i></div>`;
             return `
             <div class="p-3 border rounded d-flex align-items-center gap-3 candidate-card" data-id="${item.id}" style="cursor:pointer;">
+                <div class="form-check">
+                    <input class="form-check-input row-check" type="checkbox" value="${item.id}">
+                </div>
                 ${avatarHtml}
                 <div class="flex-grow-1">
                     <div class="fw-semibold">${name || item.student_id}</div>
@@ -311,6 +323,9 @@ $icon_class = ($role === 'admin') ? 'bi bi-person-gear' : 'bi bi-person-circle';
             const res = await fetch(`elecom_candidates_api.php?action=list&q=${encodeURIComponent(q)}`);
             const data = await res.json();
             groupAndRender(data || []);
+            // reset selects
+            document.getElementById('selectAll').checked = false;
+            updateBulkState();
         }
 
         let searchDebounce = null;
@@ -318,6 +333,32 @@ $icon_class = ($role === 'admin') ? 'bi bi-person-gear' : 'bi bi-person-circle';
         searchInput.addEventListener('input', ()=>{ clearTimeout(searchDebounce); searchDebounce = setTimeout(loadList, 300); });
         searchBtn.addEventListener('click', loadList);
         loadList();
+
+        // Bulk select/delete
+        function updateBulkState(){
+            const checks = Array.from(document.querySelectorAll('.row-check'));
+            const any = checks.some(c=>c.checked);
+            document.getElementById('bulkDeleteBtn').disabled = !any;
+        }
+        document.addEventListener('change', (e)=>{
+            if(e.target && e.target.classList.contains('row-check')){ updateBulkState(); }
+        });
+        document.getElementById('selectAll').addEventListener('change', (e)=>{
+            const on = e.target.checked;
+            document.querySelectorAll('.row-check').forEach(cb=>{ cb.checked = on; });
+            updateBulkState();
+        });
+        document.getElementById('bulkDeleteBtn').addEventListener('click', async ()=>{
+            const ids = Array.from(document.querySelectorAll('.row-check:checked')).map(cb=>parseInt(cb.value,10)).filter(Boolean);
+            if(ids.length===0) return;
+            if(!confirm(`Unregister ${ids.length} selected candidate(s)?`)) return;
+            const fd = new FormData();
+            fd.append('ids', JSON.stringify(ids));
+            const res = await fetch('elecom_candidates_api.php?action=bulk_delete', { method:'POST', body: fd });
+            const d = await res.json();
+            if(d && d.ok){ loadList(); }
+            else { alert(d && d.error ? d.error : 'Failed to unregister selected'); }
+        });
 
         // Card click -> view details (ignore clicks on edit/delete buttons)
         const viewModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('viewModal'));

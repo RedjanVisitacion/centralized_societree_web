@@ -113,6 +113,26 @@ try {
         exit;
     }
 
+    if ($action === 'bulk_delete' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        ensure_admin();
+        $raw = $_POST['ids'] ?? '';
+        if ($raw === '') { http_response_code(400); echo json_encode(['error'=>'No ids provided']); exit; }
+        $ids = [];
+        if (is_array($raw)) { $ids = array_map('intval', $raw); }
+        else {
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded)) { $ids = array_map('intval', $decoded); }
+            else { $ids = array_map('intval', explode(',', (string)$raw)); }
+        }
+        $ids = array_values(array_filter($ids, fn($v)=> $v>0));
+        if (empty($ids)) { http_response_code(400); echo json_encode(['error'=>'No valid ids']); exit; }
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $pdo->prepare("DELETE FROM candidates_registration WHERE id IN ($placeholders)");
+        $stmt->execute($ids);
+        echo json_encode(['ok'=>true, 'deleted'=>count($ids)]);
+        exit;
+    }
+
     http_response_code(400);
     echo json_encode(['error' => 'Unknown action']);
 } catch (Throwable $e) {
