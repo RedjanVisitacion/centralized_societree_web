@@ -1,8 +1,35 @@
 <?php
-session_start();
-if (!isset($_SESSION['role']) || strtolower((string)$_SESSION['role']) !== 'admin') {
-    header('Location: ../student/elecom_dashboard.php');
-    exit();
+require_once '../../../db_connection.php';
+if (session_status() === PHP_SESSION_NONE) { session_start(); }
+$role = isset($_SESSION['role']) ? strtolower((string)$_SESSION['role']) : '';
+$full_name = trim($_SESSION['full_name'] ?? '');
+$student_id = $_SESSION['student_id'] ?? '';
+$display_name = $full_name !== '' ? $full_name : ($student_id !== '' ? $student_id : ($role !== '' ? ucfirst($role) : 'User'));
+$display_role = $role !== '' ? ucfirst($role) : 'User';
+$icon_class = ($role === 'admin') ? 'bi bi-person-gear' : 'bi bi-person-circle';
+
+// Get total candidates
+$total_candidates = 0;
+try {
+    $stmt = $pdo->query('SELECT COUNT(*) AS total FROM candidates_registration');
+    $row = $stmt->fetch();
+    if ($row && isset($row['total'])) {
+        $total_candidates = (int)$row['total'];
+    }
+} catch (Throwable $e) {
+    $total_candidates = 0;
+}
+// Get total voters (all users with role = student)
+$total_voters = 0;
+try {
+    $stmt2 = $pdo->prepare("SELECT COUNT(*) AS total FROM users WHERE role = :role");
+    $stmt2->execute([':role' => 'student']);
+    $row2 = $stmt2->fetch();
+    if ($row2 && isset($row2['total'])) {
+        $total_voters = (int)$row2['total'];
+    }
+} catch (Throwable $e) {
+    $total_voters = 0;
 }
 ?>
 <!DOCTYPE html>
@@ -16,9 +43,6 @@ if (!isset($_SESSION['role']) || strtolower((string)$_SESSION['role']) !== 'admi
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="../../../assets/css/app.css">
-    <link rel="stylesheet" href="../css/elecom.css">
-
-
 </head>
 <body class="theme-elecom">
 
@@ -31,7 +55,6 @@ if (!isset($_SESSION['role']) || strtolower((string)$_SESSION['role']) !== 'admi
             <div class="sidebar-header-content">
                 <div class="logo-container">
                     <img src="../../../assets/logo/elecom_2.png" alt="ELECOM Logo">
-
                     <h4>Electoral Commission</h4>
                 </div>
                 <button class="btn-close-sidebar" id="closeSidebar">
@@ -73,12 +96,73 @@ if (!isset($_SESSION['role']) || strtolower((string)$_SESSION['role']) !== 'admi
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="../../../dashboard.php">
-                        
                         <i class="bi bi-box-arrow-right"></i>
                         <span>Logout</span>
                     </a>
                 </li>
             </ul>
+        </div>
+    </div>
+
+    <!-- Candidate Detail Modal -->
+    <div class="modal fade" id="candidateModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="d-flex align-items-center gap-2">
+                        <img id="cd_photo" src="" alt="Profile" class="rounded-circle border" style="width:42px;height:42px;object-fit:cover;display:none;">
+                        <h5 class="modal-title mb-0">Candidate Details</h5>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="cd_name" readonly>
+                                <label for="cd_name">Name</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="cd_student_id" readonly>
+                                <label for="cd_student_id">Student ID</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="cd_position" readonly>
+                                <label for="cd_position">Position</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="cd_org" readonly>
+                                <label for="cd_org">Organization</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="cd_program" readonly>
+                                <label for="cd_program">Program</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="cd_year" readonly>
+                                <label for="cd_year">Year/Section</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Platform</label>
+                            <div class="p-2 border rounded" id="cd_platform" style="min-height:64px;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -89,33 +173,62 @@ if (!isset($_SESSION['role']) || strtolower((string)$_SESSION['role']) !== 'admi
             <button class="menu-toggle" id="menuToggle">
                 <i class="bi bi-list"></i>
             </button>
-            <div class="search-box">
-                <div class="input-group">
-                    <input type="text" class="form-control" placeholder="Search...">
-                    <button class="btn btn-outline-secondary" type="button">
+            <div class="search-box position-relative" style="min-width:320px; flex:1 1 auto; max-width: 760px;">
+                <div class="input-group input-group-lg">
+                    <input id="candidateSearch" type="text" class="form-control" placeholder="Search candidate by name, ID, position, or organization..." autocomplete="off">
+                    <button class="btn btn-outline-secondary" type="button" id="candidateSearchBtn">
                         <i class="bi bi-search"></i>
                     </button>
                 </div>
+                <div id="searchResults" class="list-group position-absolute w-100" style="z-index:1050; max-height: 320px; overflow:auto; display:none;"></div>
             </div>
             <div class="user-info">
                 <div class="notifications">
                     <i class="bi bi-bell fs-5"></i>
                 </div>
                 <div class="user-avatar">
-                    <i class="bi bi-person-circle"></i>
+                    <i class="<?php echo $icon_class; ?>"></i>
                 </div>
                 <div class="user-details">
-                    <div class="user-name">Tim</div>
-                    <div class="user-role">Student</div>
+                    <div class="user-name"><?php echo htmlspecialchars($display_name); ?></div>
+                    <div class="user-role"><?php echo htmlspecialchars($display_role); ?></div>
                 </div>
             </div>
         </nav>
 
         <!-- Content Area -->
         <div class="content-area">
-            <h2 class="mb-4">Admin Dashboard</h2>
+            <!-- KPIs Row -->
+            <div class="row g-3 mb-4">
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body d-flex align-items-center">
+                            <div class="me-3 text-primary">
+                                <i class="bi bi-people-fill" style="font-size: 2rem;"></i>
+                            </div>
+                            <div>
+                                <div class="small text-muted">Total Candidates</div>
+                                <div class="h3 mb-0"><?php echo number_format($total_candidates); ?></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body d-flex align-items-center">
+                            <div class="me-3 text-success">
+                                <i class="bi bi-person-vcard-fill" style="font-size: 2rem;"></i>
+                            </div>
+                            <div>
+                                <div class="small text-muted">Total Voters</div>
+                                <div class="h3 mb-0"><?php echo number_format($total_voters); ?></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-            <!-- Recent Activity -->
+            <!-- Announcements (placeholder) -->
             <div class="recent-activity">
                 <h5 class="mb-3">Announcements</h5>
                 <div class="activity-list">
@@ -127,38 +240,29 @@ if (!isset($_SESSION['role']) || strtolower((string)$_SESSION['role']) !== 'admi
         </div>
     </div>
 
-    <!-- Bootstrap JS and dependencies -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
-    
-    <!-- Custom JavaScript -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const menuToggle = document.getElementById('menuToggle');
             const sidebar = document.getElementById('sidebar');
             const sidebarOverlay = document.getElementById('sidebarOverlay');
             const closeSidebar = document.getElementById('closeSidebar');
-            
-            // Toggle sidebar on menu button click
+
             menuToggle.addEventListener('click', function() {
                 sidebar.classList.add('active');
                 sidebarOverlay.classList.add('active');
             });
-            
-            // Close sidebar methods:
-            
-            // 1. Close button click
+
             closeSidebar.addEventListener('click', function() {
                 sidebar.classList.remove('active');
                 sidebarOverlay.classList.remove('active');
             });
-            
-            // 2. Overlay click
+
             sidebarOverlay.addEventListener('click', function() {
                 sidebar.classList.remove('active');
                 sidebarOverlay.classList.remove('active');
             });
 
-            // 3. Auto-close when clicking menu links
             document.querySelectorAll('.sidebar .nav-link').forEach(link => {
                 link.addEventListener('click', function() {
                     if (window.innerWidth <= 992) {
@@ -167,12 +271,85 @@ if (!isset($_SESSION['role']) || strtolower((string)$_SESSION['role']) !== 'admi
                     }
                 });
             });
-            
-            // 4. Window resize (close on desktop)
+
             window.addEventListener('resize', function() {
                 if (window.innerWidth > 992) {
                     sidebar.classList.remove('active');
                     sidebarOverlay.classList.remove('active');
+                }
+            });
+
+            // Candidate Search Logic
+            const input = document.getElementById('candidateSearch');
+            const btn = document.getElementById('candidateSearchBtn');
+            const results = document.getElementById('searchResults');
+            let debounceTimer = null;
+
+            function hideResults() {
+                results.style.display = 'none';
+                results.innerHTML = '';
+            }
+
+            function showResults(items) {
+                if (!items || items.length === 0) { hideResults(); return; }
+                const placeholder = 'https://via.placeholder.com/40x40?text=%20';
+                results.innerHTML = items.map(item => {
+                    const name = [item.first_name, item.middle_name, item.last_name].filter(Boolean).join(' ');
+                    const photo = item.photo_url && item.photo_url.startsWith('http') ? item.photo_url : placeholder;
+                    return `\n<a href="#" class="list-group-item list-group-item-action" data-id="${item.id}">\n  <div class="d-flex align-items-center gap-2">\n    <img src="${photo}" alt="" class="rounded-circle border" style="width:40px;height:40px;object-fit:cover;">\n    <div class="flex-grow-1">\n      <div class="d-flex w-100 justify-content-between">\n        <strong>${name}</strong>\n        <small>${item.student_id || ''}</small>\n      </div>\n      <div class="small text-muted">${item.position || ''}${item.organization ? ' • ' + item.organization : ''}</div>\n    </div>\n  </div>\n</a>`;
+                }).join('');
+                results.style.display = 'block';
+            }
+
+            async function doSearch() {
+                const q = input.value.trim();
+                if (!q || q.length < 2) { hideResults(); return; }
+                try {
+                    const res = await fetch(`elecom_candidates_api.php?action=search&q=${encodeURIComponent(q)}`);
+                    const data = await res.json();
+                    showResults(data);
+                } catch (e) { hideResults(); }
+            }
+
+            input.addEventListener('input', () => {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(doSearch, 250);
+            });
+            btn.addEventListener('click', (e) => { e.preventDefault(); doSearch(); });
+
+            document.addEventListener('click', (e) => {
+                if (!results.contains(e.target) && e.target !== input) {
+                    hideResults();
+                }
+            });
+
+            results.addEventListener('click', async (e) => {
+                const link = e.target.closest('a[data-id]');
+                if (!link) return;
+                e.preventDefault();
+                const id = link.getAttribute('data-id');
+                hideResults();
+                try {
+                    const res = await fetch(`elecom_candidates_api.php?action=detail&id=${encodeURIComponent(id)}`);
+                    const d = await res.json();
+                    if (d && !d.error) {
+                        const name = [d.first_name, d.middle_name, d.last_name].filter(Boolean).join(' ');
+                        document.getElementById('cd_name').value = name;
+                        document.getElementById('cd_student_id').value = d.student_id || '';
+                        document.getElementById('cd_position').value = d.position || '';
+                        document.getElementById('cd_org').value = d.organization || '';
+                        document.getElementById('cd_program').value = d.program || '';
+                        document.getElementById('cd_year').value = d.year_section || '';
+                        document.getElementById('cd_platform').textContent = d.platform || '';
+                        const img = document.getElementById('cd_photo');
+                        if (d.photo_url && d.photo_url.startsWith('http')) {
+                            img.src = d.photo_url; img.style.display = 'block';
+                        } else { img.style.display = 'none'; }
+                        const modal = new bootstrap.Modal(document.getElementById('candidateModal'));
+                        modal.show();
+                    }
+                } catch (err) {
+                    // ignore
                 }
             });
         });
