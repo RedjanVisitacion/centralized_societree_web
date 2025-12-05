@@ -31,6 +31,42 @@ try {
 } catch (Throwable $e) {
     $total_voters = 0;
 }
+
+// Get latest election window
+$vw = null; $vw_status = 'No schedule';
+$vw_status_class = 'secondary';
+try {
+    $stmt3 = $pdo->query('SELECT * FROM vote_windows ORDER BY id DESC LIMIT 1');
+    $vw = $stmt3->fetch();
+    if ($vw) {
+        $now = time();
+        $start_ts = $vw['start_at'] ? strtotime($vw['start_at']) : null;
+        $end_ts = $vw['end_at'] ? strtotime($vw['end_at']) : null;
+        if ($start_ts && $end_ts) {
+            if ($now < $start_ts) { $vw_status = 'Upcoming'; $vw_status_class = 'warning'; }
+            elseif ($now >= $start_ts && $now <= $end_ts) { $vw_status = 'Active'; $vw_status_class = 'success'; }
+            else { $vw_status = 'Closed'; $vw_status_class = 'danger'; }
+        }
+    }
+} catch (Throwable $e) { /* ignore */ }
+
+// Get total cast votes (ballots submitted)
+$total_cast_votes = 0;
+try {
+    // Primary: count rows in votes table if present
+    $stmtCV = $pdo->query('SELECT COUNT(*) AS total FROM votes');
+    $rowCV = $stmtCV->fetch();
+    if ($rowCV && isset($rowCV['total'])) { $total_cast_votes = (int)$rowCV['total']; }
+} catch (Throwable $e) {
+    try {
+        // Fallback: distinct voters in vote_items (assuming voter_id column)
+        $stmtCV2 = $pdo->query('SELECT COUNT(DISTINCT voter_id) AS total FROM vote_items');
+        $rowCV2 = $stmtCV2->fetch();
+        if ($rowCV2 && isset($rowCV2['total'])) { $total_cast_votes = (int)$rowCV2['total']; }
+    } catch (Throwable $e2) {
+        $total_cast_votes = 0;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -198,6 +234,50 @@ try {
 
         <!-- Content Area -->
         <div class="content-area">
+            <!-- Election Countdown -->
+            <?php if ($vw && in_array($vw_status, ['Upcoming','Active'])): ?>
+            <div class="mb-3">
+                <div class="card shadow-sm border-0" style="background: linear-gradient(135deg, #9b8cf2 0%, #ff9ec7 100%); color: #fff;">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                            <div>
+                                <div class="fw-semibold fs-5">USTP-OROQUIETA Election</div>
+                                <div class="opacity-75">General Election to legislative assembly</div>
+                                <div class="small mt-2">
+                                    <?php if ($vw_status === 'Upcoming'): ?>
+                                        Voting opens on <?php echo htmlspecialchars(date('M d, Y h:i A', strtotime($vw['start_at']))); ?>
+                                    <?php else: ?>
+                                        Voting closes on <?php echo htmlspecialchars(date('M d, Y h:i A', strtotime($vw['end_at']))); ?>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="text-center">
+                                    <div id="ec_days" class="fs-3 fw-bold">00</div>
+                                    <div class="small">days</div>
+                                </div>
+                                <div class="text-center">
+                                    <div id="ec_hours" class="fs-3 fw-bold">00</div>
+                                    <div class="small">hours</div>
+                                </div>
+                                <div class="text-center">
+                                    <div id="ec_mins" class="fs-3 fw-bold">00</div>
+                                    <div class="small">mins</div>
+                                </div>
+                                <div class="text-center">
+                                    <div id="ec_secs" class="fs-3 fw-bold">00</div>
+                                    <div class="small">sec</div>
+                                </div>
+                            </div>
+                            <div>
+                                <a href="elecom_election_date.php" class="btn btn-light text-primary fw-semibold">Manage</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
+
             <!-- KPIs Row -->
             <div class="row g-3 mb-4">
                 <div class="col-12 col-sm-6 col-lg-3">
@@ -226,14 +306,59 @@ try {
                         </div>
                     </div>
                 </div>
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body d-flex align-items-center">
+                            <div class="me-3 text-danger">
+                                <i class="bi bi-check2-square" style="font-size: 2rem;"></i>
+                            </div>
+                            <div>
+                                <div class="small text-muted">Total Cast Votes</div>
+                                <div class="h3 mb-0"><?php echo number_format($total_cast_votes); ?></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <!-- Announcements (placeholder) -->
-            <div class="recent-activity">
-                <h5 class="mb-3">Announcements</h5>
-                <div class="activity-list">
-                    <div class="activity-item">
-                        
+            <!-- Announcements and Election Window -->
+            <div class="row g-3">
+                <div class="col-12 col-lg-6">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body">
+                            <h5 class="mb-3">Announcements</h5>
+                            <div class="activity-list">
+                                <div class="activity-item">
+                                    
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-6">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-calendar-event text-info" style="font-size: 1.5rem;"></i>
+                                    <div class="fw-semibold">Election Date</div>
+                                </div>
+                                <span class="badge bg-<?php echo htmlspecialchars($vw_status_class); ?>"><?php echo htmlspecialchars($vw_status); ?></span>
+                            </div>
+                            <?php if ($vw): ?>
+                                <div class="small text-muted">Start</div>
+                                <div class="mb-2"><?php echo htmlspecialchars(date('M d, Y h:i A', strtotime($vw['start_at']))); ?></div>
+                                <div class="small text-muted">End</div>
+                                <div class="mb-2"><?php echo htmlspecialchars(date('M d, Y h:i A', strtotime($vw['end_at']))); ?></div>
+                                <?php if (!empty($vw['results_at'])): ?>
+                                    <div class="small text-muted">Results</div>
+                                    <div class="mb-2"><?php echo htmlspecialchars(date('M d, Y h:i A', strtotime($vw['results_at']))); ?></div>
+                                <?php endif; ?>
+                                
+                            <?php else: ?>
+                                <div class="text-muted">No schedule set. Configure it in <a href="elecom_election_date.php">Set Election Dates</a>.</div>
+                            <?php endif; ?>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -352,6 +477,41 @@ try {
                     // ignore
                 }
             });
+
+            // Election Countdown timer
+            <?php if ($vw && in_array($vw_status, ['Upcoming','Active'])): ?>
+            (function(){
+                const targetTs = <?php echo json_encode($vw_status === 'Upcoming' ? strtotime($vw['start_at']) : strtotime($vw['end_at'])); ?> * 1000;
+                const daysEl = document.getElementById('ec_days');
+                const hoursEl = document.getElementById('ec_hours');
+                const minsEl = document.getElementById('ec_mins');
+                const secsEl = document.getElementById('ec_secs');
+                if (!daysEl || !hoursEl || !minsEl || !secsEl) return;
+                function pad(n){ return String(n).padStart(2,'0'); }
+                function tick(){
+                    const now = Date.now();
+                    let diff = Math.max(0, targetTs - now);
+                    const d = Math.floor(diff / (1000*60*60*24));
+                    diff -= d*(1000*60*60*24);
+                    const h = Math.floor(diff / (1000*60*60));
+                    diff -= h*(1000*60*60);
+                    const m = Math.floor(diff / (1000*60));
+                    diff -= m*(1000*60);
+                    const s = Math.floor(diff / 1000);
+                    daysEl.textContent = pad(d);
+                    hoursEl.textContent = pad(h);
+                    minsEl.textContent = pad(m);
+                    secsEl.textContent = pad(s);
+                    if (targetTs - now <= 0) {
+                        clearInterval(timer);
+                        // Optionally refresh to update status
+                        setTimeout(() => location.reload(), 1500);
+                    }
+                }
+                tick();
+                const timer = setInterval(tick, 1000);
+            })();
+            <?php endif; ?>
         });
     </script>
 </body>
