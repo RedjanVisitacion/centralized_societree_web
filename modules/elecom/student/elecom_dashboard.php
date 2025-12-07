@@ -146,10 +146,14 @@ $icon_class = 'bi bi-person-circle';
                 <div class="fw-semibold mb-1">Student web portal is under construction</div>
                 <div class="mb-2">Please use the SocieTree mobile app for voting and student features in the meantime.</div>
 <<<<<<< HEAD
+<<<<<<< HEAD
                 <a href="https://www.mediafire.com/file/chgia0y0n0jdglu/SocieTree_v4.apk/file" class="btn btn-primary" target="_blank" rel="noopener noreferrer">
 =======
                 <a href="https://www.mediafire.com/file/pn8lujiic1i8jiv/SocieTree_v3.apk/file" class="btn btn-primary" target="_blank" rel="noopener noreferrer">
 >>>>>>> a5c928e3c2717702ca92849296cde29d3e48b423
+=======
+                <a href="https://www.mediafire.com/file/chgia0y0n0jdglu/SocieTree_v4.apk/file" class="btn btn-primary" target="_blank" rel="noopener noreferrer">
+>>>>>>> 613c140f78cf0217a162c48358b13beb65831940
                   <i class="bi bi-download me-1"></i> Download SocieTree Android APK
                 </a>
               </div>

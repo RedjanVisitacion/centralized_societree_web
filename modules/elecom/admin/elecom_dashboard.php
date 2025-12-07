@@ -573,6 +573,9 @@ try {
             <?php if ($vw && in_array($vw_status, ['Upcoming','Active'])): ?>
             (function(){
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 613c140f78cf0217a162c48358b13beb65831940
                 // Build target timestamp in a fixed timezone to avoid client TZ differences
                 <?php
                     $dt_str = ($vw_status === 'Upcoming') ? ($vw['start_at'] ?? '') : ($vw['end_at'] ?? '');
@@ -586,9 +589,12 @@ try {
                     } catch (Throwable $e) { $target_ts_ms = 0; }
                 ?>
                 const targetTs = <?php echo json_encode($target_ts_ms); ?>;
+<<<<<<< HEAD
 =======
                 const targetTs = <?php echo json_encode($vw_status === 'Upcoming' ? strtotime($vw['start_at']) : strtotime($vw['end_at'])); ?> * 1000;
 >>>>>>> a5c928e3c2717702ca92849296cde29d3e48b423
+=======
+>>>>>>> 613c140f78cf0217a162c48358b13beb65831940
                 const daysEl = document.getElementById('ec_days');
                 const hoursEl = document.getElementById('ec_hours');
                 const minsEl = document.getElementById('ec_mins');
@@ -600,11 +606,17 @@ try {
                     let diff = Math.max(0, targetTs - now);
                     const d = Math.floor(diff / (1000*60*60*24));
 <<<<<<< HEAD
+<<<<<<< HEAD
                     // Calculate total remaining hours (not modulo 24)
                     const totalHours = Math.floor((Math.max(0, targetTs - now)) / (1000*60*60));
                     // Keep the rest of breakdown for mins/secs
 =======
 >>>>>>> a5c928e3c2717702ca92849296cde29d3e48b423
+=======
+                    // Calculate total remaining hours (not modulo 24)
+                    const totalHours = Math.floor((Math.max(0, targetTs - now)) / (1000*60*60));
+                    // Keep the rest of breakdown for mins/secs
+>>>>>>> 613c140f78cf0217a162c48358b13beb65831940
                     diff -= d*(1000*60*60*24);
                     const h = Math.floor(diff / (1000*60*60));
                     diff -= h*(1000*60*60);
@@ -613,11 +625,16 @@ try {
                     const s = Math.floor(diff / 1000);
                     daysEl.textContent = pad(d);
 <<<<<<< HEAD
+<<<<<<< HEAD
                     // Show total remaining hours in the hours field (e.g., 600 hours)
                     hoursEl.textContent = String(totalHours);
 =======
                     hoursEl.textContent = pad(h);
 >>>>>>> a5c928e3c2717702ca92849296cde29d3e48b423
+=======
+                    // Show total remaining hours in the hours field (e.g., 600 hours)
+                    hoursEl.textContent = String(totalHours);
+>>>>>>> 613c140f78cf0217a162c48358b13beb65831940
                     minsEl.textContent = pad(m);
                     secsEl.textContent = pad(s);
                     if (targetTs - now <= 0) {

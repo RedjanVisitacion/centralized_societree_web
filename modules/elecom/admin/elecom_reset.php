@@ -32,9 +32,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset']) && $_POST['r
             // Delete children first
             $pdo->exec('DELETE FROM vote_items');
 <<<<<<< HEAD
+<<<<<<< HEAD
             $pdo->exec('DELETE FROM vote_results');
 =======
 >>>>>>> a5c928e3c2717702ca92849296cde29d3e48b423
+=======
+            $pdo->exec('DELETE FROM vote_results');
+>>>>>>> 613c140f78cf0217a162c48358b13beb65831940
             $pdo->exec('DELETE FROM votes');
             $pdo->commit();
             $success_msg = 'All votes have been reset.';
