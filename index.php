@@ -228,7 +228,7 @@
                         </div>
                         <button type="submit" class="btn-login" id="loginBtn">LOGIN</button>
                         <div class="text-center">
-                            <a href="#" class="forgot-password">FORGOT PASSWORD?</a>
+                            <a href="#" class="forgot-password" id="openForgot">FORGOT PASSWORD?</a>
                         </div>
                     </form>
                 </div>
@@ -237,6 +237,37 @@
         </div>
     </div>
 
+        <!-- Forgot Password Modal -->
+    <div class="modal fade" id="forgotModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Reset Password</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div id="fpStep1">
+              <div class="mb-3">
+                <label class="form-label">Email or ID Number</label>
+                <input type="text" class="form-control" id="fpIdentifier" placeholder="Enter your email or ID number">
+              </div>
+              <button class="btn-login" id="fpSendOtpBtn" type="button">Send Code</button>
+            </div>
+            <div id="fpStep2" style="display:none">
+              <div class="mb-3">
+                <label class="form-label">Verification Code</label>
+                <input type="text" class="form-control" id="fpOtp" placeholder="6-digit code">
+              </div>
+              <div class="mb-3">
+                <label class="form-label">New Password</label>
+                <input type="password" class="form-control" id="fpNewPassword" placeholder="Enter new password">
+              </div>
+              <button class="btn-login" id="fpResetBtn" type="button">Reset Password</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
     <!-- Bootstrap JS and dependencies -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
     
@@ -274,5 +305,87 @@
       })();
     </script>
 
+    <script>
+      (function(){
+        const forgotLink = document.getElementById('openForgot');
+        const modalEl = document.getElementById('forgotModal');
+        const modal = modalEl ? new bootstrap.Modal(modalEl) : null;
+        const fpIdentifier = document.getElementById('fpIdentifier');
+        const fpSendOtpBtn = document.getElementById('fpSendOtpBtn');
+        const fpStep1 = document.getElementById('fpStep1');
+        const fpStep2 = document.getElementById('fpStep2');
+        const fpOtp = document.getElementById('fpOtp');
+        const fpNewPassword = document.getElementById('fpNewPassword');
+        const fpResetBtn = document.getElementById('fpResetBtn');
+        let fpCurrentIdentifier = '';
+
+        if (forgotLink && modal) {
+          forgotLink.addEventListener('click', function(e){
+            e.preventDefault();
+            if (fpIdentifier) fpIdentifier.value = '';
+            if (fpOtp) fpOtp.value = '';
+            if (fpNewPassword) fpNewPassword.value = '';
+            if (fpStep1) fpStep1.style.display = '';
+            if (fpStep2) fpStep2.style.display = 'none';
+            fpCurrentIdentifier = '';
+            modal.show();
+          });
+        }
+
+        if (fpSendOtpBtn) {
+          fpSendOtpBtn.addEventListener('click', async function(){
+            const identifier = (fpIdentifier && fpIdentifier.value.trim()) || '';
+            if (!identifier) { alert('Enter your email or ID number'); return; }
+            const original = fpSendOtpBtn.textContent; fpSendOtpBtn.disabled = true; fpSendOtpBtn.textContent = 'Sending...';
+            try {
+              const res = await fetch('backend/forgot_password_request.php', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ identifier })
+              });
+              const data = await res.json().catch(()=>({success:false,message:'Invalid response'}));
+              if (res.ok && data.success) {
+                fpCurrentIdentifier = identifier;
+                if (fpStep1) fpStep1.style.display = 'none';
+                if (fpStep2) fpStep2.style.display = '';
+                alert('A verification code was sent to your email.');
+              } else {
+                alert((data && data.message) || 'Failed to send code');
+              }
+            } catch (e) {
+              alert('Network error. Please try again.');
+            } finally {
+              fpSendOtpBtn.disabled = false; fpSendOtpBtn.textContent = original;
+            }
+          });
+        }
+
+        if (fpResetBtn) {
+          fpResetBtn.addEventListener('click', async function(){
+            const otp = (fpOtp && fpOtp.value.trim()) || '';
+            const new_password = (fpNewPassword && fpNewPassword.value) || '';
+            const identifier = fpCurrentIdentifier || (fpIdentifier && fpIdentifier.value.trim()) || '';
+            if (!otp || !new_password || !identifier) { alert('Enter the code, new password, and your identifier'); return; }
+            const original = fpResetBtn.textContent; fpResetBtn.disabled = true; fpResetBtn.textContent = 'Resetting...';
+            try {
+              const res = await fetch('backend/reset_password.php', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ identifier, otp, new_password })
+              });
+              const data = await res.json().catch(()=>({success:false,message:'Invalid response'}));
+              if (res.ok && data.success) {
+                alert('Password reset successful. You can now sign in.');
+                if (modal) modal.hide();
+              } else {
+                alert((data && data.message) || 'Failed to reset password');
+              }
+            } catch (e) {
+              alert('Network error. Please try again.');
+            } finally {
+              fpResetBtn.disabled = false; fpResetBtn.textContent = original;
+            }
+          });
+        }
+      })();
+    </script>
 </body>
 </html>
