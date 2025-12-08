@@ -572,11 +572,7 @@ try {
             // Election Countdown timer
             <?php if ($vw && in_array($vw_status, ['Upcoming','Active'])): ?>
             (function(){
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 613c140f78cf0217a162c48358b13beb65831940
-                // Build target timestamp in a fixed timezone to avoid client TZ differences
+                // Build target timestamp in Asia/Manila to avoid client TZ differences
                 <?php
                     $dt_str = ($vw_status === 'Upcoming') ? ($vw['start_at'] ?? '') : ($vw['end_at'] ?? '');
                     $target_ts_ms = 0;
@@ -589,57 +585,29 @@ try {
                     } catch (Throwable $e) { $target_ts_ms = 0; }
                 ?>
                 const targetTs = <?php echo json_encode($target_ts_ms); ?>;
-<<<<<<< HEAD
-=======
-                const targetTs = <?php echo json_encode($vw_status === 'Upcoming' ? strtotime($vw['start_at']) : strtotime($vw['end_at'])); ?> * 1000;
->>>>>>> a5c928e3c2717702ca92849296cde29d3e48b423
-=======
->>>>>>> 613c140f78cf0217a162c48358b13beb65831940
                 const daysEl = document.getElementById('ec_days');
                 const hoursEl = document.getElementById('ec_hours');
                 const minsEl = document.getElementById('ec_mins');
                 const secsEl = document.getElementById('ec_secs');
                 if (!daysEl || !hoursEl || !minsEl || !secsEl) return;
-                function pad(n){ return String(n).padStart(2,'0'); }
+                const pad = (n) => String(n).padStart(2,'0');
                 function tick(){
                     const now = Date.now();
                     let diff = Math.max(0, targetTs - now);
-                    const d = Math.floor(diff / (1000*60*60*24));
-<<<<<<< HEAD
-<<<<<<< HEAD
-                    // Calculate total remaining hours (not modulo 24)
-                    const totalHours = Math.floor((Math.max(0, targetTs - now)) / (1000*60*60));
-                    // Keep the rest of breakdown for mins/secs
-=======
->>>>>>> a5c928e3c2717702ca92849296cde29d3e48b423
-=======
-                    // Calculate total remaining hours (not modulo 24)
-                    const totalHours = Math.floor((Math.max(0, targetTs - now)) / (1000*60*60));
-                    // Keep the rest of breakdown for mins/secs
->>>>>>> 613c140f78cf0217a162c48358b13beb65831940
-                    diff -= d*(1000*60*60*24);
-                    const h = Math.floor(diff / (1000*60*60));
-                    diff -= h*(1000*60*60);
-                    const m = Math.floor(diff / (1000*60));
-                    diff -= m*(1000*60);
+                    const totalHours = Math.floor(Math.max(0, targetTs - now) / 3600000);
+                    const d = Math.floor(diff / 86400000);
+                    diff -= d * 86400000;
+                    const h = Math.floor(diff / 3600000);
+                    diff -= h * 3600000;
+                    const m = Math.floor(diff / 60000);
+                    diff -= m * 60000;
                     const s = Math.floor(diff / 1000);
                     daysEl.textContent = pad(d);
-<<<<<<< HEAD
-<<<<<<< HEAD
-                    // Show total remaining hours in the hours field (e.g., 600 hours)
                     hoursEl.textContent = String(totalHours);
-=======
-                    hoursEl.textContent = pad(h);
->>>>>>> a5c928e3c2717702ca92849296cde29d3e48b423
-=======
-                    // Show total remaining hours in the hours field (e.g., 600 hours)
-                    hoursEl.textContent = String(totalHours);
->>>>>>> 613c140f78cf0217a162c48358b13beb65831940
                     minsEl.textContent = pad(m);
                     secsEl.textContent = pad(s);
-                    if (targetTs - now <= 0) {
+                    if (targetTs <= now) {
                         clearInterval(timer);
-                        // Optionally refresh to update status
                         setTimeout(() => location.reload(), 1500);
                     }
                 }

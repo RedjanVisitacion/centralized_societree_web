@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMS Authentication - Saferide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .emergency-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #e74c3c;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="tel"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+            font-family: inherit;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #e74c3c;
+        }
+
+        .help-text {
+            font-size: 12px;
+            color: #999;
+            margin-top: 4px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            padding: 16px 32px;
+            border: none;
+            border-radius: 6px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .message {
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #e74c3c;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="emergency-icon">🚨</div>
+        <h1>SMS Authentication</h1>
+        <p class="subtitle">Send a one-time code (OTP) to your phone to authenticate<br><small style="font-size: 11px; color: #999;">Device: itel
+                P661N</small></p>
+
+        <div id="message" class="message"></div>
+        <div id="locationStatus" class="location-status" style="display: none;"></div>
+
+        <form id="otpForm">
+            <div class="form-group">
+                <label for="phone">Phone Number <span style="color: #e74c3c;">*</span></label>
+                <input type="tel" id="phone" name="phone" required placeholder="+63XXXXXXXXXX">
+                <div class="help-text">Include country code (e.g., +63 for Philippines)</div>
+            </div>
+
+            <button type="button" id="sendOtpBtn" class="btn">
+                🔐 Send OTP
+            </button>
+
+            <div id="codeSection" style="display:none; margin-top: 16px;">
+                <div class="form-group">
+                    <label for="otpCode">Enter OTP</label>
+                    <input type="text" id="otpCode" name="otpCode" placeholder="6-digit code" maxlength="6">
+                </div>
+                <button type="button" id="verifyOtpBtn" class="btn" style="background: #27ae60;">✅ Verify OTP</button>
+            </div>
+
+            <div class="loading" id="loading" style="display:none;">Processing...</div>
+        </form>
+
+    </div>
+
+    <script>
+        function showError(message) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.className = 'message error';
+            messageDiv.textContent = '❌ ' + message;
+            messageDiv.style.display = 'block';
+        }
+
+        function showSuccess(message) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.className = 'message success';
+            messageDiv.textContent = '✅ ' + message;
+            messageDiv.style.display = 'block';
+        }
+
+        function sanitizePhone(raw) {
+            return raw.replace(/[^0-9+]/g, '');
+        }
+
+        // Normalize to E.164 for PH by default
+        function normalizePhone(phone) {
+            // Already E.164
+            if (phone.startsWith('+')) return phone;
+            // Remove non-digits
+            const digits = phone.replace(/\D/g, '');
+            // If starts with 0 and length 11 (e.g., 09171234567) -> +63 + last 10 digits
+            if (/^0\d{10}$/.test(digits)) return '+63' + digits.slice(1);
+            // If starts with 9 and length 10 (e.g., 9171234567) -> +639 + rest
+            if (/^9\d{9}$/.test(digits)) return '+63' + digits;
+            // Fallback: return as-is (will be validated server-side)
+            return phone;
+        }
+
+        async function sendOtp() {
+            const phoneInput = document.getElementById('phone');
+            const loading = document.getElementById('loading');
+            const codeSection = document.getElementById('codeSection');
+            const messageDiv = document.getElementById('message');
+
+            const phone = normalizePhone(sanitizePhone(phoneInput.value.trim()));
+            if (!phone) {
+                showError('Phone number is required');
+                return;
+            }
+
+            messageDiv.style.display = 'none';
+            loading.style.display = 'block';
+
+            try {
+                const resp = await fetch('otp_sms.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ action: 'send', phone })
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    showSuccess('OTP sent. Please check your SMS.');
+                    codeSection.style.display = 'block';
+                } else {
+                    showError(data.error || 'Failed to send OTP');
+                }
+            } catch (e) {
+                showError('Network error: ' + e.message);
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        async function verifyOtp() {
+            const phone = normalizePhone(sanitizePhone(document.getElementById('phone').value.trim()));
+            const code = (document.getElementById('otpCode').value || '').trim();
+            const loading = document.getElementById('loading');
+            const messageDiv = document.getElementById('message');
+
+            if (!phone || !code) {
+                showError('Phone and OTP code are required');
+                return;
+            }
+
+            messageDiv.style.display = 'none';
+            loading.style.display = 'block';
+
+            try {
+                const resp = await fetch('otp_sms.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ action: 'verify', phone, code })
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    showSuccess('Phone number verified successfully.');
+                } else {
+                    showError(data.error || 'Invalid or expired OTP');
+                }
+            } catch (e) {
+                showError('Network error: ' + e.message);
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        document.getElementById('sendOtpBtn').addEventListener('click', sendOtp);
+        document.getElementById('verifyOtpBtn').addEventListener('click', verifyOtp);
+    </script>
+
+</body>
+
+</html>
