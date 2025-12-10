@@ -405,7 +405,16 @@ try {
                                         <?php
                                             $nm = trim(($rv['first_name'] ?? '').' '.($rv['middle_name'] ?? '').' '.($rv['last_name'] ?? ''));
                                             $nm = $nm !== '' ? $nm : ($rv['sid'] ?? '');
-                                            $dt = isset($rv['voted_at']) ? date('M d, Y h:i A', strtotime($rv['voted_at'])) : '';
+                                            $dt = '';
+                                            try {
+                                                if (!empty($rv['voted_at'])) {
+                                                    $d = new DateTime($rv['voted_at']);
+                                                    $d->modify('-1 hour');
+                                                    $dt = $d->format('M d, Y h:i A');
+                                                }
+                                            } catch (Throwable $e) {
+                                                $dt = isset($rv['voted_at']) ? date('M d, Y h:i A', strtotime($rv['voted_at'].' -1 hour')) : '';
+                                            }
                                         ?>
                                         <li class="list-group-item d-flex justify-content-between align-items-center">
                                             <div class="d-flex align-items-center gap-2">
