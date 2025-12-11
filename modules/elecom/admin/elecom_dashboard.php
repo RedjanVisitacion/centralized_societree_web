@@ -189,6 +189,12 @@ try {
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" href="elecom_reports.php">
+                        <i class="bi bi-file-earmark-bar-graph"></i>
+                        <span>Generate Reports</span>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" href="../../../dashboard.php">
                         <i class="bi bi-speedometer2"></i>
                         <span>SocieTree Dashboard</span>

@@ -100,10 +100,14 @@ try {
                 <li class="nav-item"><a class="nav-link" href="elecom_election_date.php"><i class="bi bi-calendar-event"></i><span>Set Election Dates</span></a></li>
                 <li class="nav-item"><a class="nav-link" href="elecom_candidates.php"><i class="bi bi-people"></i><span>Candidates</span></a></li>
                 <li class="nav-item"><a class="nav-link" href="elecom_results.php"><i class="bi bi-graph-up"></i><span>Results</span></a></li>
-                <li class="nav-item"><a class="nav-link active" href="elecom_reset.php"><i class="bi bi-arrow-counterclockwise"></i><span>Reset Votes</span></a></li><a class="nav-link" href="../../../dashboard.php">
-                        <i class="bi bi-speedometer2"></i>
-                        <span>SocieTree Dashboard</span>
+                <li class="nav-item"><a class="nav-link active" href="elecom_reset.php"><i class="bi bi-arrow-counterclockwise"></i><span>Reset Votes</span></a>
+                <li class="nav-item">
+                    <a class="nav-link" href="elecom_reports.php">
+                        <i class="bi bi-file-earmark-bar-graph"></i>
+                        <span>Generate Reports</span>
                     </a>
+                </li>
+                </li><a class="nav-link" href="../../../dashboard.php"><i class="bi bi-speedometer2"></i><span>SocieTree Dashboard</span></a>
             </ul>
         </div>
     </div>
