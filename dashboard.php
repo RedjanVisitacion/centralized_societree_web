@@ -260,7 +260,7 @@
         <!-- Row 2 -->
         <!-- Organization Card 5 -->
         <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6">
-            <a href="modules/afprotech/afprotech_dashboard.php" class="text-decoration-none">
+            <a href="modules/afprotech/afprotechs_dashboard.php" class="text-decoration-none">
                 <div class="card organization-card h-100">
                     <div class="card-body text-center">
                         <div class="organization-icon mb-3">

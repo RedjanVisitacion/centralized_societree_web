@@ -1,6 +1,6 @@
 <?php
 // Database connection and form processing at the TOP of the file
-require_once(__DIR__ . '/../../backend/usg_announcement_backend.php');
+require_once(__DIR__ . '/../../backend/usg_announcement_store.php');
 ?>
 
 <!DOCTYPE html>
@@ -12,9 +12,445 @@ require_once(__DIR__ . '/../../backend/usg_announcement_backend.php');
     <link rel="icon" href="../../assets/logo/usg_2.png" type="image/png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="../../assets/css/app.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&display=swap');
+
+        *{
+        font-family: "Oswald", sans-serif;
+        font-weight: 500;
+        font-style: normal;
+        }
+
+        body {
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+        }
+
+        .sidebar {
+            background: #1e174a;
+            color: white;
+            width: 260px;
+            min-height: 100vh;
+            transition: all 0.3s;
+            box-shadow: 3px 0 10px rgba(0,0,0,0.1);
+            position: fixed;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .sidebar-header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sidebar-header img {
+            height: 50px;
+        }
+
+        .sidebar-header h4 {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .btn-close-sidebar {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: white;
+            cursor: pointer;
+            padding: 5px;
+            display: none;
+        }
+
+        .btn-close-sidebar:hover {
+            opacity: 0.7;
+        }
+
+        .sidebar-menu {
+            padding: 20px 0;
+        }
+
+        .nav-link {
+            color: rgba(255,255,255,0.8);
+            padding: 12px 25px;
+            margin: 5px 0;
+            border-left: 3px solid transparent;
+            transition: all 0.3s;
+            position: relative;
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: white;
+            background: rgba(255,255,255,0.1);
+            border-left: 5px solid #f9a702;
+        }
+
+        .nav-link i {
+            margin-right: 10px;
+            font-size: 1.1rem;
+            width: 20px;
+            text-align: center;
+        }
+
+        .nav-link .chevron {
+            margin-left: auto;
+            transition: transform 0.3s ease;
+        }
+
+        .nav-link[aria-expanded="true"] .chevron {
+            transform: rotate(90deg);
+        }
+
+        .dropdown-menu {
+            background: rgba(21, 16, 54, 1);
+            border: none;
+            border-radius: 0;
+            padding: 0;
+            margin: 0;
+            box-shadow: none;
+            width: 100%;
+        }
+
+        .dropdown-item {
+            color: rgba(255,255,255,0.8);
+            padding: 10px 25px 10px 50px;
+            border-left: 3px solid transparent;
+            transition: all 0.3s;
+            width: 100%;
+            text-decoration: none;
+            display: block;
+        }
+
+        .dropdown-item:hover {
+            color: white;
+            background: rgba(255,255,255,0.1);
+            border-left: 5px solid #f9a702;
+            text-decoration: none;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            margin-left: 260px;
+            transition: margin-left 0.3s;
+        }
+
+        .top-navbar {
+            background: white;
+            padding: 15px 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 999;
+        }
+
+        .search-box {
+            width: 300px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #080204;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .content-area {
+            padding: 30px;
+            flex: 1;
+        }
+
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+
+        .recent-activity {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .activity-item {
+            padding: 15px 0;
+            border-bottom: 1px solid #ecf0f1;
+            display: flex;
+            align-items: center;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #ecf0f1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            color: #3498db;
+        }
+
+        .announcement-title {
+            color: #1e174a;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .form-select {
+            height: 50px;
+            padding: 8px 12px;
+        }
+
+        .announcement-content {
+            color: #555;
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+
+        .announcement-date {
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        /* Modal Custom Styles */
+        .modal-content {
+            border-radius: 10px;
+            border: none;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .modal-header {
+            background: #1e174a;
+            color: white;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px 10px 0 0;
+        }
+
+        .modal-title {
+            font-weight: 600;
+        }
+
+        .btn-close-white {
+            filter: invert(1) grayscale(100%) brightness(200%);
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .form-control, .form-control:focus {
+            border: 1px solid #ddd;
+            box-shadow: none;
+            padding: 12px;
+            border-radius: 5px;
+        }
+
+        .form-control:focus {
+            border-color: #1e174a;
+        }
+
+        textarea.form-control {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        .alert {
+            border-radius: 8px;
+            border: none;
+        }
+
+        /* Mobile Menu Toggle */
+        .menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #1e174a;
+            cursor: pointer;
+        }
+
+        /* Custom badge colors for announcement types */
+        .bg-event {
+            background-color: #fd7e14 !important;
+        }
+
+        .bg-cleaning {
+            background-color: #5e4c47 !important;
+        }
+        
+        .bg-seminar {
+            background-color: #0097b2 !important;
+        }
+        
+        .bg-workshop {
+            background-color: #6f42c1 !important;
+        }
+
+        .activity-item {
+            position: relative;
+        }
+
+        .activity-item .badge {
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            font-weight: 500;
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 260px;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .menu-toggle {
+                display: block;
+            }
+            
+            .btn-close-sidebar {
+                display: block;
+            }
+            
+            .search-box {
+                width: 200px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .top-navbar {
+                padding: 15px;
+                flex-wrap: wrap;
+                gap: 15px;
+            }
+            
+            .search-box {
+                width: 100%;
+                order: 3;
+            }
+            
+            .user-info {
+                margin-left: auto;
+            }
+            
+            .user-details {
+                display: none;
+            }
+            
+            .content-area {
+                padding: 20px 15px;
+            }
+            
+            .content-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .content-header .btn {
+                align-self: flex-end;
+            }
+            
+            .recent-activity {
+                padding: 20px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .activity-item {
+                flex-direction: column;
+                align-items: flex-start;
+                text-align: left;
+            }
+            
+            .activity-icon {
+                margin-right: 0;
+                margin-bottom: 10px;
+            }
+            
+            .sidebar-header h4 {
+                font-size: 1rem;
+            }
+            
+            .content-header .btn {
+                align-self: stretch;
+                width: 100%;
+            }
+            
+            .modal-dialog {
+                margin: 10px;
+            }
+        }
+
+        /* Overlay for mobile menu */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+        
+        .sidebar-overlay.active {
+            display: block;
+        }
+    </style>
 </head>
-<body class="theme-usg">
+<body>
 
     <!-- Sidebar Overlay for Mobile -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
@@ -36,13 +472,13 @@ require_once(__DIR__ . '/../../backend/usg_announcement_backend.php');
             <ul class="nav flex-column">
                 <li class="nav-item">
                     <a class="nav-link" href="usg_dashboard.php">
-                        <i class="bi bi-house-door"></i>
+                        <i class="bi bi-house-door-fill"></i>
                         <span>Home</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link active" href="usg_announcement.php">
-                        <i class="bi bi-megaphone"></i>
+                        <i class="bi bi-megaphone-fill"></i>
                         <span>Announcement</span>
                     </a>
                 </li>
@@ -60,7 +496,8 @@ require_once(__DIR__ . '/../../backend/usg_announcement_backend.php');
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="../../dashboard.php">
-                        <i class="bi bi-box-arrow-right"></i>
+                        <i class="bi bi-arrow-left-square-fill"></i>
+                        
                         <span>Logout</span>
                     </a>
                 </li>
@@ -77,7 +514,7 @@ require_once(__DIR__ . '/../../backend/usg_announcement_backend.php');
             </button>
             <div class="search-box">
                 <div class="input-group">
-                    <input type="text" class="form-control" placeholder="Search announcements...">
+                    <input type="text" class="form-control" placeholder="Search...">
                     <button class="btn btn-outline-secondary" type="button">
                         <i class="bi bi-search"></i>
                     </button>
@@ -124,27 +561,48 @@ require_once(__DIR__ . '/../../backend/usg_announcement_backend.php');
             <!-- Header with Title and Button -->
             <div class="content-header">
                 <h2 class="mb-0">Announcements</h2>
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newAnnouncementModal">
-                    <i class="bi bi-plus-circle"></i> New Announcement
+                <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#newAnnouncementModal">
+                    <i class="bi bi-plus-circle"></i> Create Announcement
                 </button>
             </div>
 
             <!-- Recent Activity -->
             <div class="recent-activity">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="mb-0">Announcements</h5>
-                </div>
                 
                 <!-- Announcements List -->
                 <div id="announcementsList">
                     <?php if (!empty($announcements)): ?>
-                        <?php foreach ($announcements as $announcement): ?>
+                        <?php 
+                        // Type badges styling and labels
+                        $type_labels = [
+                            'event' => ['badge' => 'bg-event', 'label' => 'Event'],
+                            'cleaning' => ['badge' => 'bg-cleaning', 'label' => 'Cleaning'],
+                            'meeting' => ['badge' => 'bg-info', 'label' => 'Meeting'],
+                            'seminar' => ['badge' => 'bg-seminar', 'label' => 'Seminar'],
+                            'workshop' => ['badge' => 'bg-workshop', 'label' => 'Workshop'],
+                            'maintenance' => ['badge' => 'bg-secondary', 'label' => 'Maintenance'],
+                            'urgent' => ['badge' => 'bg-danger', 'label' => 'Urgent'],
+                            'important' => ['badge' => 'bg-warning', 'label' => 'Important']
+                        ];
+                        ?>
+                        
+                        <?php foreach ($announcements as $announcement): 
+                            $type = $announcement['announcement_type'] ?? '';
+                            $type_info = $type_labels[$type] ?? ['badge' => 'bg-secondary', 'label' => ucfirst($type)];
+                        ?>
                             <div class="activity-item">
                                 <div class="activity-icon">
                                     <i class="bi bi-megaphone"></i>
                                 </div>
                                 <div class="flex-grow-1">
-                                    <h6 class="announcement-title"><?php echo htmlspecialchars($announcement['announcement_title']); ?></h6>
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="announcement-title mb-0"><?php echo htmlspecialchars($announcement['announcement_title']); ?></h6>
+                                        <?php if (!empty($type)): ?>
+                                            <span class="badge rounded-pill <?php echo $type_info['badge']; ?>">
+                                                <?php echo $type_info['label']; ?>
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
                                     <p class="announcement-content"><?php echo nl2br(htmlspecialchars($announcement['announcement_content'])); ?></p>
                                     <small class="announcement-date">
                                         <i class="bi bi-clock me-1"></i>
@@ -176,14 +634,29 @@ require_once(__DIR__ . '/../../backend/usg_announcement_backend.php');
                 </div>
                 <form id="announcementForm" method="POST" action="">
                     <div class="modal-body">
-                        <div class="mb-3">
-                            <label for="announcementTitle" class="form-label">Title *</label>
-                            <input type="text" class="form-control" id="announcementTitle" name="announcement_title" 
-                                   placeholder="Enter announcement title" required maxlength="255">
-                            <div class="form-text">Maximum 255 characters</div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="announcementTitle" class="form-label">Title</label>
+                                <input type="text" class="form-control" id="announcementTitle" name="announcement_title" 
+                                       placeholder="Enter announcement title" required maxlength="255">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="announcementType" class="form-label">Type</label>
+                                <select class="form-select" id="announcementType" name="announcement_type" required>
+                                    <option value="" selected disabled>Select announcement type</option>
+                                    <option value="event">Event</option>
+                                    <option value="cleaning">Cleaning</option>
+                                    <option value="meeting">Meeting</option>
+                                    <option value="seminar">Seminar</option>
+                                    <option value="workshop">Workshop</option>
+                                    <option value="maintenance">Maintenance</option>
+                                    <option value="urgent">Urgent</option>
+                                    <option value="important">Important</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="mb-3">
-                            <label for="announcementContent" class="form-label">Content *</label>
+                            <label for="announcementContent" class="form-label">Content</label>
                             <textarea class="form-control" id="announcementContent" name="announcement_content" 
                                       rows="6" placeholder="Enter announcement content..." required></textarea>
                         </div>
@@ -191,7 +664,7 @@ require_once(__DIR__ . '/../../backend/usg_announcement_backend.php');
                             <label for="announcementDatetime" class="form-label">Date & Time</label>
                             <input type="datetime-local" class="form-control" id="announcementDatetime" 
                                    name="announcement_datetime">
-                            <div class="form-text">Leave empty for current date and time</div>
+                            <div class="form-text">Set date and time</div>
                         </div>
                     </div>
                     <div class="modal-footer">

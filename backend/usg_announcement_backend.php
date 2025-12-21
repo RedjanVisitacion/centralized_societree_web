@@ -1,30 +1,6 @@
 <?php
-// Database connection and session-based login at the TOP of the file
-session_start();
+// Database connection and form processing at the TOP of the file
 require_once(__DIR__ . '/../db_connection.php');
-
-// Resolve current logged-in user against users table
-$current_user = null;
-$is_admin = false;
-try {
-    if (!empty($_SESSION['student_id'])) {
-        $stmtUser = $pdo->prepare('SELECT id, student_id, role, department, position FROM users WHERE student_id = ? LIMIT 1');
-        $stmtUser->execute([$_SESSION['student_id']]);
-        $current_user = $stmtUser->fetch();
-        if ($current_user) {
-            $is_admin = strtolower((string)$current_user['role']) === 'admin';
-        }
-    }
-} catch (Throwable $e) {
-    // Silently ignore and treat as not logged in
-    $current_user = null;
-}
-
-// Require login; if not logged in, redirect to SocieTREE login
-if (!$current_user) {
-    header('Location: ../index.php');
-    exit();
-}
 
 // Check if form was submitted
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['announcement_title'])) {
